@@ -17,7 +17,7 @@ class Dataset:
     def __init__(self,
         h5_path,                                # e.g. 'cifar10-32.h5'
         resolution                  = None,     # e.g. 32 (autodetect if None)
-        label_path                  = None,     # e.g. 'cifar100-32-labels.npy' (autodetect if None)
+        label_path                  = None,     # e.g. 'cifar10-32-labels.npy' (autodetect if None)
         mirror_augment              = False,
         max_images                  = None,
         max_labels                  = 'all',

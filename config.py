@@ -99,7 +99,7 @@ loss = dict(                                # Loss function:
 # Configuration overrides for individual experiments.
 
 # Section 6.3: "High-resolution image generation using CelebA-HQ"
-if 1:
+if 0:
     run_desc = 'celeb-hq-1024x1024'
     dataset = dict(h5_path='celeb-hq-1024x1024.h5', resolution=1024, max_labels=0, mirror_augment=True, max_images=30000)
 
@@ -168,9 +168,9 @@ if 0:
         G.update(use_pixelnorm=False)
 
 # Section 6.4.2: "CIFAR10 inception scores"
-if 0:
+if 1:
     run_desc = 'cifar-10-32x32'
-    dataset = dict(h5_path='cifar-10-32x32.h5', resolution=32, max_labels=0, mirror_augment=False)
+    dataset = dict(h5_path='cifar10.h5', resolution=32, max_labels=0, mirror_augment=False)
     train.update(lod_training_kimg=400, lod_transition_kimg=400, rampup_kimg=0, minibatch_overrides={})
     G.update(fmap_base=4096)
     D.update(fmap_base=4096)

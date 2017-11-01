@@ -241,6 +241,8 @@ def resize_activations(v, si, so):
 #----------------------------------------------------------------------------
 # Resolution selector for fading in new layers during progressive growing.
 
+#-- The network struct is fix. But in first few steps, some layer is not used.
+#-- This layer choose the right layer for current step, and do the resolution transition like figure 2 of the paper
 class LODSelectLayer(lasagne.layers.MergeLayer):
     def __init__(self, incomings, cur_lod, first_incoming_lod=0, ref_idx=0, **kwargs):
         super(LODSelectLayer, self).__init__(incomings, **kwargs)
@@ -251,6 +253,7 @@ class LODSelectLayer(lasagne.layers.MergeLayer):
     def get_output_shape_for(self, input_shapes):
         return input_shapes[self.ref_idx]
 
+    #-- what is min_lod and max_lod ??
     def get_output_for(self, inputs, min_lod=None, max_lod=None, **kwargs):
         v = [resize_activations(input, shape, self.input_shapes[self.ref_idx]) for input, shape in zip(inputs, self.input_shapes)]
         lo = np.clip(int(np.floor(min_lod - self.first_incoming_lod)), 0, len(v)-1) if min_lod is not None else 0
@@ -258,7 +261,7 @@ class LODSelectLayer(lasagne.layers.MergeLayer):
         t = self.cur_lod - self.first_incoming_lod
         r = v[hi]
         for i in xrange(hi-1, lo-1, -1): # i = hi-1, hi-2, ..., lo
-            r = theano.ifelse.ifelse(T.lt(t, i+1), v[i] * ((i+1)-t) + v[i+1] * (t-i), r)
+            r = theano.ifelse.ifelse(T.lt(t, i+1), v[i] * ((i+1)-t) + v[i+1] * (t-i), r) #-- why not locate the right layer derectly?
         if lo < hi:
             r = theano.ifelse.ifelse(T.le(t, lo), v[lo], r)
         return r
@@ -477,7 +480,7 @@ def G_paper(
         net = PN(BN(WS(Conv2DLayer(net, name='G%db'  % I, num_filters=nf(I), filter_size=3, pad=1, nonlinearity=act, W=iact))))
         lods += [net]
 
-    lods = [WS(NINLayer(l, name='Glod%d' % i, num_units=num_channels, nonlinearity=linear, W=ilinear)) for i, l in enumerate(reversed(lods))]
+    lods = [WS(NINLayer(l, name='Glod%d' % i, num_units=num_channels, nonlinearity=linear, W=ilinear)) for i, l in enumerate(reversed(lods))] #-- use NINLayer to RGB
     output_layer = LODSelectLayer(name='Glod', incomings=lods, cur_lod=cur_lod, first_incoming_lod=0)
     if tanh_at_end is not None:
         output_layer = NonlinearityLayer(output_layer, name='Gtanh', nonlinearity=tanh)
@@ -520,7 +523,7 @@ def D_paper(
         net = LN(WS(Conv2DLayer     (GD(net),     name='D%da'   % I, num_filters=nf(I-1), filter_size=3, pad=1, nonlinearity=lrelu, W=ilrelu)))
         net =       Downscale2DLayer(net,         name='D%ddn'  % I, scale_factor=2)
         lod =       Downscale2DLayer(input_layer, name='D%dxs'  % (I-1), scale_factor=2**(R-I))
-        lod =    WS(NINLayer        (lod,         name='D%dx'   % (I-1), num_units=nf(I-1), nonlinearity=lrelu, W=ilrelu))
+        lod =    WS(NINLayer        (lod,         name='D%dx'   % (I-1), num_units=nf(I-1), nonlinearity=lrelu, W=ilrelu)) #-- apply fromRGB
         net =       LODSelectLayer  (             name='D%dlod' % (I-1), incomings=[net, lod], cur_lod=cur_lod, first_incoming_lod=R-I-1)
 
     if mbstat_avg is not None:
