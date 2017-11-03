@@ -71,7 +71,6 @@ class Dataset:
             tmp = os.path.splitext(self.h5_path)[0] + '-labels.npy'
             if os.path.isfile(tmp):
                 self.label_path = tmp
-
         # Load labels.
         if self.label_path is None or max_labels == 0:
             self.labels = np.zeros((self.shape[0], 0), dtype=np.float32)

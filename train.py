@@ -130,12 +130,17 @@ def train_gan(
             image_grid_size = np.clip(1920 / w, 3, 16), np.clip(1080 / h, 2, 16)
         example_real_images, snapshot_fake_labels = training_set.get_random_minibatch(np.prod(image_grid_size), labels=True)
         snapshot_fake_latents = random_latents(np.prod(image_grid_size), G.input_shape)
-    elif image_grid_type == 'category':
+    elif image_grid_type == 'category': 
         W = training_set.labels.shape[1]
         H = W if image_grid_size is None else image_grid_size[1]
         image_grid_size = W, H
         snapshot_fake_latents = random_latents(W*H, G.input_shape)
+        print "-" * 30
+        print W, H
+        print snapshot_fake_latents.shape 
         snapshot_fake_labels = np.zeros((W*H, W), dtype=training_set.labels.dtype)
+        print snapshot_fake_labels.shape
+        print "-" * 30
         example_real_images = np.zeros((W*H,) + training_set.shape[1:], dtype=training_set.dtype)
         for x in xrange(W):
             snapshot_fake_labels[x::W, x] = 1.0
@@ -229,7 +234,7 @@ def train_gan(
                 real_images_expr = T.extra_ops.repeat(real_images_expr, 2**min_lod, axis=3)
 
             # Optimize loss.
-            G_loss, D_loss, real_scores_out, fake_scores_out = evaluate_loss(G, D, min_lod, max_lod, real_images_expr, real_labels_var, fake_latents_var, fake_labels_var, **config.loss)
+            G_loss, D_loss, real_scores_out, fake_scores_out, G_acloss, D_acloss = evaluate_loss(G, D, min_lod, max_lod, real_images_expr, real_labels_var, fake_latents_var, fake_labels_var, **config.loss)
             G_updates = adam(G_loss, G.trainable_params(), learning_rate=G_lrate, beta1=adam_beta1, beta2=adam_beta2, epsilon=adam_epsilon).items()
             D_updates = adam(D_loss, D.trainable_params(), learning_rate=D_lrate, beta1=adam_beta1, beta2=adam_beta2, epsilon=adam_epsilon).items()
 
@@ -237,13 +242,13 @@ def train_gan(
             if not separate_funcs:
                 GD_train_fn = theano.function(
                     [real_images_var, real_labels_var, fake_latents_var, fake_labels_var],
-                    [G_loss, D_loss, real_scores_out, fake_scores_out],
+                    [G_loss, D_loss, real_scores_out, fake_scores_out, G_acloss, D_acloss],
                     updates=G_updates+D_updates+Gs.updates,
                     on_unused_input='ignore')
             else:
                 D_train_fn = theano.function(
                     [real_images_var, real_labels_var, fake_latents_var, fake_labels_var],
-                    [G_loss, D_loss, real_scores_out, fake_scores_out],
+                    [G_loss, D_loss, real_scores_out, fake_scores_out, G_acloss, D_acloss],
                     updates=D_updates, on_unused_input='ignore')
                 G_train_fn = theano.function(
                     [fake_latents_var, fake_labels_var],
@@ -283,7 +288,7 @@ def train_gan(
             tick_train_out = []
 
             # Print progress.
-            print 'tick %-5d kimg %-8.1f lod %-5.2f minibatch %-4d time %-12s sec/tick %-9.1f sec/kimg %-6.1f Dgdrop %-8.4f Gloss %-8.4f Dloss %-8.4f Dreal %-8.4f Dfake %-8.4f' % (
+            print 'tick %-5d kimg %-8.1f lod %-5.2f minibatch %-4d time %-12s sec/tick %-9.1f sec/kimg %-6.1f Dgdrop %-8.4f Gloss %-8.4f Dloss %-8.4f Dreal %-8.4f Dfake %-8.4f GACloss %-8.4f DACloss %-8.4f' % (
                 (cur_tick, cur_nimg / 1000.0, cur_lod, minibatch_size, misc.format_time(cur_time - train_start_time), tick_time, tick_time / tick_kimg, gdrop_strength) + tick_train_avg)
 
             # Visualize generated images.
@@ -347,10 +352,12 @@ def evaluate_loss(
         D_loss = L2(real_scores_out, 0) + L2(fake_scores_out, 1) * L2_fake_weight
 
     if cond_type == 'acgan': # AC-GAN
-        G_loss += crossent(fake_labels_out, fake_labels_in) * cond_weight
-        D_loss += (crossent(real_labels_out, real_labels_in) + crossent(fake_labels_out, fake_labels_in)) * cond_weight
+        G_acloss = crossent(fake_labels_out, fake_labels_in) * cond_weight
+        G_loss += G_acloss
+        D_acloss = (crossent(real_labels_out, real_labels_in) + crossent(fake_labels_out, fake_labels_in)) * cond_weight
+        D_loss += D_acloss
 
-    return G_loss, D_loss, real_scores_out, fake_scores_out
+    return G_loss, D_loss, real_scores_out, fake_scores_out, G_acloss, D_acloss
 
 #----------------------------------------------------------------------------
 # Image generation API.

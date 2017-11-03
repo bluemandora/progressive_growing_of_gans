@@ -170,8 +170,10 @@ if 0:
 # Section 6.4.2: "CIFAR10 inception scores"
 if 1:
     run_desc = 'cifar-10-32x32'
-    dataset = dict(h5_path='cifar10.h5', resolution=32, max_labels=0, mirror_augment=False)
-    train.update(lod_training_kimg=400, lod_transition_kimg=400, rampup_kimg=0, minibatch_overrides={})
+    dataset = dict(h5_path='cifar10.h5', resolution=32, max_labels="all", mirror_augment=False)
+    # train.update(lod_training_kimg=400, lod_transition_kimg=400, rampup_kimg=0, minibatch_overrides={}, total_kimg=15000, image_grid_type='category', 
+    #     resume_network_pkl = '006-cifar-10-32x32/network-snapshot-002800.pkl', resume_kimg = 2800)
+    train.update(lod_training_kimg=400, lod_transition_kimg=400, rampup_kimg=0, minibatch_overrides={}, total_kimg=15000, image_grid_type='category')
     G.update(fmap_base=4096)
     D.update(fmap_base=4096)
     loss.update(iwass_target=750.0)

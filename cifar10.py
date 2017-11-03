@@ -8,7 +8,7 @@ from scipy.misc import imresize
 
 DISTRIBUTION_FILE = 'cifar-10-python.tar.gz'
 
-def convert_cifar10(output_filename='cifar10.h5'):
+def convert_cifar10(output_filename='datasets/cifar10.h5'):
 	"""Converts the CIFAR-10 dataset to HDF5.
 	Converts the CIFAR-10 dataset to an HDF5 dataset compatible with
 	:class:`fuel.datasets.CIFAR10`. The converted dataset is saved as
@@ -52,14 +52,15 @@ def convert_cifar10(output_filename='cifar10.h5'):
 	train_labels = numpy.concatenate(
 		[numpy.array(batch['labels'], dtype=numpy.uint8)
 			for batch in train_batches])
-	train_labels = numpy.expand_dims(train_labels, 1)
+	onehot_labels = numpy.zeros((train_labels.shape[0], train_labels.max()+1))
+	onehot_labels[numpy.arange(train_labels.shape[0]), train_labels] = 1
 
 	for i in [32, 16, 8, 4, 2, 1]:
 		h5file['data{}x{}'.format(i, i)] = train_features
 		train_features = train_features[:, :, ::2, ::2]
 		print train_features.shape
 
-	numpy.save('cifar10-32-labels.npy', train_labels)
+	numpy.save('datasets/cifar10-labels.npy', onehot_labels.astype(numpy.float32))
 
 
 	h5file.flush()
