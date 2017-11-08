@@ -248,7 +248,7 @@ def train_gan(
             else:
                 D_train_fn = theano.function(
                     [real_images_var, real_labels_var, fake_latents_var, fake_labels_var],
-                    [G_loss, D_loss, real_scores_out, fake_scores_out, G_acloss, D_acloss],
+                    [G_loss, D_loss, real_scores_out, fake_scores_out],
                     updates=D_updates, on_unused_input='ignore')
                 G_train_fn = theano.function(
                     [fake_latents_var, fake_labels_var],
@@ -288,7 +288,7 @@ def train_gan(
             tick_train_out = []
 
             # Print progress.
-            print 'tick %-5d kimg %-8.1f lod %-5.2f minibatch %-4d time %-12s sec/tick %-9.1f sec/kimg %-6.1f Dgdrop %-8.4f Gloss %-8.4f Dloss %-8.4f Dreal %-8.4f Dfake %-8.4f GACloss %-8.4f DACloss %-8.4f' % (
+            print 'tick %-5d kimg %-8.1f lod %-5.2f minibatch %-4d time %-12s sec/tick %-9.1f sec/kimg %-6.1f Dgdrop %-8.4f Gloss %-8.4f Dloss %-8.4f Dreal %-8.4f Dfake %-8.4f' % (
                 (cur_tick, cur_nimg / 1000.0, cur_lod, minibatch_size, misc.format_time(cur_time - train_start_time), tick_time, tick_time / tick_kimg, gdrop_strength) + tick_train_avg)
 
             # Visualize generated images.

@@ -168,7 +168,7 @@ if 0:
         G.update(use_pixelnorm=False)
 
 # Section 6.4.2: "CIFAR10 inception scores"
-if 1:
+if 0:
     run_desc = 'cifar-10-32x32'
     dataset = dict(h5_path='cifar10.h5', resolution=32, max_labels="all", mirror_augment=False)
     # train.update(lod_training_kimg=400, lod_transition_kimg=400, rampup_kimg=0, minibatch_overrides={}, total_kimg=15000, image_grid_type='category', 
@@ -176,7 +176,7 @@ if 1:
     train.update(lod_training_kimg=400, lod_transition_kimg=400, rampup_kimg=0, minibatch_overrides={}, total_kimg=15000, image_grid_type='category')
     G.update(fmap_base=4096)
     D.update(fmap_base=4096)
-    loss.update(iwass_target=750.0)
+    loss.update(iwass_target=750.0, cond_weight = 200.0)
 
 # Appendix E: "MNIST-1K discrete mode test with crippled discriminator"
 if 0:
@@ -207,6 +207,14 @@ if 0:
     if ourNorm:
         G.update(use_wscale=True, use_pixelnorm=True, use_batchnorm=False);
         D.update(use_wscale=True, use_batchnorm=False);
+
+if 1:
+    run_desc = 'healthy'
+    dataset = dict(h5_path='healthy.h5', resolution=512, max_labels=0, mirror_augment=True)
+    train.update(lod_training_kimg=400, lod_transition_kimg=400, rampup_kimg=0, minibatch_overrides={})
+    G.update(fmap_base=4096)
+    D.update(fmap_base=4096)
+    loss.update(iwass_target=750.0)
 
 #----------------------------------------------------------------------------
 # Utilities for analyzing networks.
